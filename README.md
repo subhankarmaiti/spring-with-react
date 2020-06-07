@@ -1,6 +1,6 @@
 # Webapp with Spring Boot and React
 
-Spring boot and react setup to deploy the application to real time server. It gets up and run quickly and very useful for continuous deployment with github function.
+Spring boot and react setup to deploy the application to real time server. It gets up and run quickly and very useful for continuous deployment.
 
 ## Goal:
 
@@ -118,3 +118,90 @@ export default class App extends Component {
   }
 }
 ```
+
+#### Step 7 (Packaging the react app with Spring-boot)
+
+- Create production build of react app.
+- Copy the build to the `${target/classes/public}` directory.
+
+**Create production build**
+We will use `frontend-maven-plugin` to create the build. Add the following to pom.xml under /build/plugins:
+
+```xml
+<plugin>
+  <groupId>com.github.eirslett</groupId>
+  <artifactId>frontend-maven-plugin</artifactId>
+  <version>1.0</version>
+  <configuration>
+    <workingDirectory>app</workingDirectory>
+    <installDirectory>target</installDirectory>
+  </configuration>
+  <executions>
+    <execution>
+      <id>install node and npm</id>
+      <goals>
+        <goal>install-node-and-npm</goal>
+      </goals>
+      <configuration>
+        <nodeVersion>v12.18.0</nodeVersion>
+        <npmVersion>6.14.4</npmVersion>
+      </configuration>
+    </execution>
+    <execution>
+      <id>npm install</id>
+      <goals>
+        <goal>npm</goal>
+      </goals>
+      <configuration>
+        <arguments>install</arguments>
+      </configuration>
+    </execution>
+    <execution>
+      <id>npm run build</id>
+      <goals>
+        <goal>npm</goal>
+      </goals>
+      <configuration>
+        <arguments>run build</arguments>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+```
+
+This will generate the production build under `/app/build` directory.
+
+**Copy the build to the `${target/classes/public}` directory.**
+Finally we need to move the directory to `${target/classes/public}`
+
+We will use `maven-antrun-plugin` to copy the build. Add the following to pom.xml under /build/plugins:
+
+```xml
+<plugin>
+  <artifactId>maven-antrun-plugin</artifactId>
+  <executions>
+    <execution>
+      <phase>generate-resources</phase>
+      <configuration>
+        <target>
+          <copy todir="${project.build.directory}/classes/public">
+            <fileset dir="${project.basedir}/app/build"/>
+          </copy>
+        </target>
+      </configuration>
+      <goals>
+        <goal>run</goal>
+      </goals>
+    </execution>
+  </executions>
+</plugin>
+```
+
+#### Congratulations!
+
+**Now you can deploy your project standalone anywhere you want.**
+
+Few more ideas you can try to implement with this approach.
+
+- Try to deploy it to heroku or similar free platform.
+- Use github function to deploy the project to server
